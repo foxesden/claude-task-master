@@ -20,7 +20,7 @@ export function registerMoveTaskTool(server) {
 	server.addTool({
 		name: 'move_task',
 		description: 'Move a task or subtask to a new position',
-		inputSchema: z.object({
+		parameters: z.object({
 			from: z
 				.string()
 				.describe(

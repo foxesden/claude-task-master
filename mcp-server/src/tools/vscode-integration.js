@@ -52,7 +52,7 @@ function createSuccessResponse(data, message = 'Operation completed successfully
 export const initializeVSCodeIntegration = {
     name: 'initialize_vscode_integration',
     description: 'Initialize VSCode integration for TaskMaster project including settings, tasks, and Augment configuration',
-    inputSchema: InitializeVSCodeSchema,
+    parameters: InitializeVSCodeSchema,
     execute: withNormalizedProjectRoot(async (args, { log, session }) => {
         try {
             log.info(`Initializing VSCode integration for project: ${args.projectRoot}`);
@@ -95,7 +95,7 @@ export const initializeVSCodeIntegration = {
 export const updateVSCodeSettings = {
     name: 'update_vscode_settings',
     description: 'Update VSCode settings for TaskMaster integration',
-    inputSchema: UpdateVSCodeSettingsSchema,
+    parameters: UpdateVSCodeSettingsSchema,
     execute: withNormalizedProjectRoot(async (args, { log, session }) => {
         try {
             log.info(`Updating VSCode settings for project: ${args.projectRoot}`);
@@ -127,7 +127,7 @@ export const updateVSCodeSettings = {
 export const getVSCodeStatus = {
     name: 'get_vscode_status',
     description: 'Get the current status of VSCode integration for TaskMaster',
-    inputSchema: GetVSCodeStatusSchema,
+    parameters: GetVSCodeStatusSchema,
     execute: withNormalizedProjectRoot(async (args, { log, session }) => {
         try {
             log.info(`Getting VSCode integration status for project: ${args.projectRoot}`);
@@ -151,7 +151,7 @@ export const getVSCodeStatus = {
 export const setupAugmentContextProvider = {
     name: 'setup_augment_context_provider',
     description: 'Setup TaskMaster as a context provider for Augment Code extension',
-    inputSchema: z.object({
+    parameters: z.object({
         projectRoot: z.string().describe('The project root directory'),
         enabled: z.boolean().optional().default(true).describe('Enable or disable the context provider')
     }),
@@ -194,7 +194,7 @@ export const setupAugmentContextProvider = {
 export const generateVSCodeWorkspace = {
     name: 'generate_vscode_workspace',
     description: 'Generate a VSCode workspace file optimized for TaskMaster development',
-    inputSchema: z.object({
+    parameters: z.object({
         projectRoot: z.string().describe('The project root directory'),
         workspaceName: z.string().optional().describe('Custom name for the workspace file')
     }),

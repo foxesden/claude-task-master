@@ -43,7 +43,7 @@ export function registerShowTaskTool(server) {
 	server.addTool({
 		name: 'get_task',
 		description: 'Get detailed information about a specific task',
-		inputSchema: z.object({
+		parameters: z.object({
 			id: z.string().describe('Task ID to get'),
 			status: z
 				.string()

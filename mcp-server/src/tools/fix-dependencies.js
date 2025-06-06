@@ -20,7 +20,7 @@ export function registerFixDependenciesTool(server) {
 	server.addTool({
 		name: 'fix_dependencies',
 		description: 'Fix invalid dependencies in tasks automatically',
-		inputSchema: z.object({
+		parameters: z.object({
 			file: z.string().optional().describe('Absolute path to the tasks file'),
 			projectRoot: z
 				.string()

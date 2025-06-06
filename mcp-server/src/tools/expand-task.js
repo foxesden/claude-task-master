@@ -20,7 +20,7 @@ export function registerExpandTaskTool(server) {
 	server.addTool({
 		name: 'expand_task',
 		description: 'Expand a task into subtasks for detailed implementation',
-		inputSchema: z.object({
+		parameters: z.object({
 			id: z.string().describe('ID of task to expand'),
 			num: z.string().optional().describe('Number of subtasks to generate'),
 			research: z

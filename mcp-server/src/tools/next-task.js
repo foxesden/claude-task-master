@@ -24,7 +24,7 @@ export function registerNextTaskTool(server) {
 		name: 'next_task',
 		description:
 			'Find the next task to work on based on dependencies and status',
-		inputSchema: z.object({
+		parameters: z.object({
 			file: z.string().optional().describe('Absolute path to the tasks file'),
 			complexityReport: z
 				.string()

@@ -21,7 +21,7 @@ export function registerUpdateTaskTool(server) {
 		name: 'update_task',
 		description:
 			'Updates a single task by ID with new information or context provided in the prompt.',
-		inputSchema: z.object({
+		parameters: z.object({
 			id: z
 				.string() // ID can be number or string like "1.2"
 				.describe(

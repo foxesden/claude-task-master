@@ -11,7 +11,7 @@ export function registerInitializeProjectTool(server) {
 		name: 'initialize_project',
 		description:
 			'Initializes a new Task Master project structure by calling the core initialization logic. Creates necessary folders and configuration files for Task Master in the current directory.',
-		inputSchema: z.object({
+		parameters: z.object({
 			skipInstall: z
 				.boolean()
 				.optional()

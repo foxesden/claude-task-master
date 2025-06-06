@@ -20,7 +20,7 @@ export function registerAddDependencyTool(server) {
 	server.addTool({
 		name: 'add_dependency',
 		description: 'Add a dependency relationship between two tasks',
-		inputSchema: z.object({
+		parameters: z.object({
 			id: z.string().describe('ID of task that will depend on another task'),
 			dependsOn: z
 				.string()

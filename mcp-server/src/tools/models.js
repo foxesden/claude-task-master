@@ -20,7 +20,7 @@ export function registerModelsTool(server) {
 		name: 'models',
 		description:
 			'Get information about available AI models or set model configurations. Run without arguments to get the current model configuration and API key status for the selected model providers.',
-		inputSchema: z.object({
+		parameters: z.object({
 			setMain: z
 				.string()
 				.optional()

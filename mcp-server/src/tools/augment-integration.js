@@ -49,7 +49,7 @@ function createSuccessResponse(data, message = 'Operation completed successfully
 export const initializeAugmentIntegration = {
     name: 'initialize_augment_integration',
     description: 'Initialize Augment Code integration for TaskMaster project including MCP configuration, context providers, and VSCode settings',
-    inputSchema: InitializeAugmentSchema,
+    parameters: InitializeAugmentSchema,
     execute: withNormalizedProjectRoot(async (args, { log, session }) => {
         try {
             log.info(`Initializing Augment Code integration for project: ${args.projectRoot}`);
@@ -92,7 +92,7 @@ export const initializeAugmentIntegration = {
 export const getAugmentStatus = {
     name: 'get_augment_status',
     description: 'Get the current status of Augment Code integration for TaskMaster',
-    inputSchema: GetAugmentStatusSchema,
+    parameters: GetAugmentStatusSchema,
     execute: withNormalizedProjectRoot(async (args, { log, session }) => {
         try {
             log.info(`Getting Augment integration status for project: ${args.projectRoot}`);
@@ -116,7 +116,7 @@ export const getAugmentStatus = {
 export const generateAugmentInstructions = {
     name: 'generate_augment_instructions',
     description: 'Generate detailed setup instructions for Augment Code integration',
-    inputSchema: z.object({
+    parameters: z.object({
         projectRoot: z.string().describe('The project root directory'),
         format: z.enum(['markdown', 'text']).optional().default('markdown').describe('Output format for instructions')
     }),
@@ -148,7 +148,7 @@ export const generateAugmentInstructions = {
 export const configureAugmentMCP = {
     name: 'configure_augment_mcp',
     description: 'Configure TaskMaster as an MCP server for Augment Code with custom settings',
-    inputSchema: z.object({
+    parameters: z.object({
         projectRoot: z.string().describe('The project root directory'),
         serverName: z.string().optional().default('taskmaster').describe('Name for the MCP server'),
         useGlobalInstall: z.boolean().optional().default(true).describe('Use globally installed task-master-ai command'),
@@ -203,7 +203,7 @@ export const configureAugmentMCP = {
 export const testAugmentIntegration = {
     name: 'test_augment_integration',
     description: 'Test the Augment Code integration by checking configuration and connectivity',
-    inputSchema: z.object({
+    parameters: z.object({
         projectRoot: z.string().describe('The project root directory')
     }),
     execute: withNormalizedProjectRoot(async (args, { log, session }) => {

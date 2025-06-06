@@ -20,7 +20,7 @@ export function registerClearSubtasksTool(server) {
 	server.addTool({
 		name: 'clear_subtasks',
 		description: 'Clear subtasks from specified tasks',
-		inputSchema: z
+		parameters: z
 			.object({
 				id: z
 					.string()

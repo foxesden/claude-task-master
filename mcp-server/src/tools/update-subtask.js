@@ -21,7 +21,7 @@ export function registerUpdateSubtaskTool(server) {
 		name: 'update_subtask',
 		description:
 			'Appends timestamped information to a specific subtask without replacing existing content. If you just want to update the subtask status, use set_task_status instead.',
-		inputSchema: z.object({
+		parameters: z.object({
 			id: z
 				.string()
 				.describe(
