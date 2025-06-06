@@ -63,8 +63,8 @@ export async function expandTaskDirect(args, log, context = {}) {
 
 	log.info(`[expandTaskDirect] Using tasksPath: ${tasksPath}`);
 
-	// Validate task ID
-	const taskId = id ? parseInt(id, 10) : null;
+	// Validate task ID - support both numeric and subtask IDs
+	const taskId = id;
 	if (!taskId) {
 		log.error('Task ID is required');
 		return {
@@ -107,10 +107,55 @@ export async function expandTaskDirect(args, log, context = {}) {
 			};
 		}
 
-		// Find the specific task
-		log.info(`[expandTaskDirect] Searching for task ID ${taskId} in data`);
-		const task = data.tasks.find((t) => t.id === taskId);
-		log.info(`[expandTaskDirect] Task found: ${task ? 'Yes' : 'No'}`);
+		// Enhanced task finding logic for subtasks
+		log.info(`[expandTaskDirect] Searching for task/subtask ID ${taskId} in data`);
+		let task = null;
+		let isSubtask = false;
+		let mainTaskIndex = -1;
+
+		// Check if taskId is a subtask ID (contains dots)
+		if (taskId.includes('.')) {
+			isSubtask = true;
+			const parts = taskId.split('.');
+			const mainTaskId = parseInt(parts[0], 10);
+
+			// Find the main task
+			mainTaskIndex = data.tasks.findIndex((t) => t.id === mainTaskId);
+			if (mainTaskIndex === -1) {
+				return {
+					success: false,
+					error: {
+						code: 'TASK_NOT_FOUND',
+						message: `Main task ${mainTaskId} not found`
+					}
+				};
+			}
+
+			// Navigate to the subtask using nested-subtask-utils
+			const { findSubtaskByPath } = require('../../../scripts/modules/task-manager/nested-subtask-utils.js');
+			const subtaskResult = findSubtaskByPath(data.tasks[mainTaskIndex], parts.slice(1).map(Number));
+
+			if (!subtaskResult) {
+				return {
+					success: false,
+					error: {
+						code: 'TASK_NOT_FOUND',
+						message: `Subtask ${taskId} not found`
+					}
+				};
+			}
+
+			task = subtaskResult.subtask;
+			log.info(`[expandTaskDirect] Subtask found: Yes`);
+		} else {
+			// Handle main task (original logic)
+			const numericTaskId = parseInt(taskId, 10);
+			task = data.tasks.find((t) => t.id === numericTaskId);
+			if (task) {
+				mainTaskIndex = data.tasks.findIndex((t) => t.id === numericTaskId);
+			}
+			log.info(`[expandTaskDirect] Main task found: ${task ? 'Yes' : 'No'}`);
+		}
 
 		if (!task) {
 			return {
@@ -133,29 +178,17 @@ export async function expandTaskDirect(args, log, context = {}) {
 			};
 		}
 
-		// Check for existing subtasks and force flag
+		// Handle force flag for clearing existing subtasks
 		const hasExistingSubtasks = task.subtasks && task.subtasks.length > 0;
-		if (hasExistingSubtasks && !forceFlag) {
-			log.info(
-				`Task ${taskId} already has ${task.subtasks.length} subtasks. Use --force to overwrite.`
-			);
-			return {
-				success: true,
-				data: {
-					message: `Task ${taskId} already has subtasks. Expansion skipped.`,
-					task,
-					subtasksAdded: 0,
-					hasExistingSubtasks
-				}
-			};
-		}
-
-		// If force flag is set, clear existing subtasks
 		if (hasExistingSubtasks && forceFlag) {
 			log.info(
-				`Force flag set. Clearing existing subtasks for task ${taskId}.`
+				`Force flag set. Clearing existing ${task.subtasks.length} subtasks for ${isSubtask ? 'subtask' : 'task'} ${taskId}.`
 			);
 			task.subtasks = [];
+		} else if (hasExistingSubtasks) {
+			log.info(
+				`${isSubtask ? 'Subtask' : 'Task'} ${taskId} already has ${task.subtasks.length} subtasks. Will append new subtasks.`
+			);
 		}
 
 		// Keep a copy of the task before modification
@@ -206,9 +239,25 @@ export async function expandTaskDirect(args, log, context = {}) {
 			// Restore normal logging
 			if (!wasSilent && isSilentMode()) disableSilentMode();
 
-			// Read the updated data
+			// Read the updated data and find the updated task
 			const updatedData = readJSON(tasksPath);
-			const updatedTask = updatedData.tasks.find((t) => t.id === taskId);
+			let updatedTask;
+
+			if (isSubtask) {
+				// For subtasks, navigate to the nested subtask again
+				const parts = taskId.split('.');
+				const mainTaskId = parseInt(parts[0], 10);
+				const mainTask = updatedData.tasks.find((t) => t.id === mainTaskId);
+				if (mainTask) {
+					const { findSubtaskByPath } = require('../../../scripts/modules/task-manager/nested-subtask-utils.js');
+					const subtaskResult = findSubtaskByPath(mainTask, parts.slice(1).map(Number));
+					updatedTask = subtaskResult ? subtaskResult.subtask : null;
+				}
+			} else {
+				// For main tasks, find directly
+				const numericTaskId = parseInt(taskId, 10);
+				updatedTask = updatedData.tasks.find((t) => t.id === numericTaskId);
+			}
 
 			// Calculate how many subtasks were added
 			const subtasksAdded = updatedTask.subtasks
