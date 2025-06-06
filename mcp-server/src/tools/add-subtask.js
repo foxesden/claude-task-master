@@ -20,7 +20,7 @@ export function registerAddSubtaskTool(server) {
 	server.addTool({
 		name: 'add_subtask',
 		description: 'Add a subtask to an existing task',
-		parameters: z.object({
+		inputSchema: z.object({
 			id: z.string().describe('Parent task ID (required)'),
 			taskId: z
 				.string()

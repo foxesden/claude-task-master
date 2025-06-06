@@ -24,7 +24,7 @@ export function registerListTasksTool(server) {
 		name: 'get_tasks',
 		description:
 			'Get all tasks from Task Master, optionally filtering by status and including subtasks.',
-		parameters: z.object({
+		inputSchema: z.object({
 			status: z
 				.string()
 				.optional()

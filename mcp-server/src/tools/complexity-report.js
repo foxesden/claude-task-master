@@ -21,7 +21,7 @@ export function registerComplexityReportTool(server) {
 	server.addTool({
 		name: 'complexity_report',
 		description: 'Display the complexity analysis report in a readable format',
-		parameters: z.object({
+		inputSchema: z.object({
 			file: z
 				.string()
 				.optional()

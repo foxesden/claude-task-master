@@ -12,7 +12,7 @@ export function registerGetOperationStatusTool(server, asyncManager) {
 		name: 'get_operation_status',
 		description:
 			'Retrieves the status and result/error of a background operation.',
-		parameters: z.object({
+		inputSchema: z.object({
 			operationId: z.string().describe('The ID of the operation to check.')
 		}),
 		execute: async (args, { log }) => {

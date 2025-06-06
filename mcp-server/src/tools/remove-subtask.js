@@ -20,7 +20,7 @@ export function registerRemoveSubtaskTool(server) {
 	server.addTool({
 		name: 'remove_subtask',
 		description: 'Remove a subtask from its parent task',
-		parameters: z.object({
+		inputSchema: z.object({
 			id: z
 				.string()
 				.describe(

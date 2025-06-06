@@ -20,7 +20,7 @@ export function registerRemoveDependencyTool(server) {
 	server.addTool({
 		name: 'remove_dependency',
 		description: 'Remove a dependency from a task',
-		parameters: z.object({
+		inputSchema: z.object({
 			id: z.string().describe('Task ID to remove dependency from'),
 			dependsOn: z.string().describe('Task ID to remove as a dependency'),
 			file: z

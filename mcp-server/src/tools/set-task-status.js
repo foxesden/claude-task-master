@@ -27,7 +27,7 @@ export function registerSetTaskStatusTool(server) {
 	server.addTool({
 		name: 'set_task_status',
 		description: 'Set the status of one or more tasks or subtasks.',
-		parameters: z.object({
+		inputSchema: z.object({
 			id: z
 				.string()
 				.describe(

@@ -24,7 +24,7 @@ export function registerAnalyzeProjectComplexityTool(server) {
 		name: 'analyze_project_complexity',
 		description:
 			'Analyze task complexity and generate expansion recommendations.',
-		parameters: z.object({
+		inputSchema: z.object({
 			threshold: z.coerce // Use coerce for number conversion from string if needed
 				.number()
 				.int()

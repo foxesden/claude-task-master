@@ -20,7 +20,7 @@ export function registerRemoveTaskTool(server) {
 	server.addTool({
 		name: 'remove_task',
 		description: 'Remove a task or subtask permanently from the tasks list',
-		parameters: z.object({
+		inputSchema: z.object({
 			id: z
 				.string()
 				.describe(

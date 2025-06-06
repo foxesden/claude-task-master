@@ -21,7 +21,7 @@ export function registerExpandAllTool(server) {
 		name: 'expand_all',
 		description:
 			'Expand all pending tasks into subtasks based on complexity or defaults',
-		parameters: z.object({
+		inputSchema: z.object({
 			num: z
 				.string()
 				.optional()

@@ -20,7 +20,7 @@ export function registerAddTaskTool(server) {
 	server.addTool({
 		name: 'add_task',
 		description: 'Add a new task using AI',
-		parameters: z.object({
+		inputSchema: z.object({
 			prompt: z
 				.string()
 				.optional()

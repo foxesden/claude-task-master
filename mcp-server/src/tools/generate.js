@@ -22,7 +22,7 @@ export function registerGenerateTool(server) {
 		name: 'generate',
 		description:
 			'Generates individual task files in tasks/ directory based on tasks.json',
-		parameters: z.object({
+		inputSchema: z.object({
 			file: z.string().optional().describe('Absolute path to the tasks file'),
 			output: z
 				.string()
