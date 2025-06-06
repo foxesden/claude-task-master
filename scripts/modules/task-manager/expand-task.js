@@ -434,20 +434,52 @@ async function expandTask(
 	}
 
 	try {
-		// --- Task Loading/Filtering (Unchanged) ---
+		// --- Enhanced Task Loading/Filtering for Subtasks ---
 		logger.info(`Reading tasks from ${tasksPath}`);
 		const data = readJSON(tasksPath);
 		if (!data || !data.tasks)
 			throw new Error(`Invalid tasks data in ${tasksPath}`);
-		const taskIndex = data.tasks.findIndex(
-			(t) => t.id === parseInt(taskId, 10)
-		);
-		if (taskIndex === -1) throw new Error(`Task ${taskId} not found`);
-		const task = data.tasks[taskIndex];
-		logger.info(
-			`Expanding task ${taskId}: ${task.title}${useResearch ? ' with research' : ''}`
-		);
-		// --- End Task Loading/Filtering ---
+
+		let task = null;
+		let taskIndex = -1;
+		let isSubtask = false;
+		let subtaskPath = null;
+
+		// Check if taskId is a subtask ID (contains dots)
+		if (taskId.includes('.')) {
+			isSubtask = true;
+			const parts = taskId.split('.');
+			const mainTaskId = parseInt(parts[0], 10);
+
+			// Find the main task
+			taskIndex = data.tasks.findIndex((t) => t.id === mainTaskId);
+			if (taskIndex === -1) throw new Error(`Main task ${mainTaskId} not found`);
+
+			// Navigate to the subtask
+			const { findSubtaskByPath } = await import('./nested-subtask-utils.js');
+			const subtaskResult = findSubtaskByPath(data.tasks[taskIndex], parts.slice(1).map(Number));
+
+			if (!subtaskResult) {
+				throw new Error(`Subtask ${taskId} not found`);
+			}
+
+			task = subtaskResult.subtask;
+			subtaskPath = parts.slice(1).map(Number);
+			logger.info(
+				`Expanding subtask ${taskId}: ${task.title}${useResearch ? ' with research' : ''}`
+			);
+		} else {
+			// Handle main task (original logic)
+			taskIndex = data.tasks.findIndex(
+				(t) => t.id === parseInt(taskId, 10)
+			);
+			if (taskIndex === -1) throw new Error(`Task ${taskId} not found`);
+			task = data.tasks[taskIndex];
+			logger.info(
+				`Expanding task ${taskId}: ${task.title}${useResearch ? ' with research' : ''}`
+			);
+		}
+		// --- End Enhanced Task Loading/Filtering ---
 
 		// --- Handle Force Flag: Clear existing subtasks if force=true ---
 		if (force && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
@@ -470,19 +502,21 @@ async function expandTask(
 		try {
 			if (fs.existsSync(complexityReportPath)) {
 				const complexityReport = readJSON(complexityReportPath);
+				// For subtasks, look for analysis using the full subtask ID
+				const lookupId = isSubtask ? taskId : task.id;
 				taskAnalysis = complexityReport?.complexityAnalysis?.find(
-					(a) => a.taskId === task.id
+					(a) => a.taskId === lookupId || a.taskId === task.id
 				);
 				if (taskAnalysis) {
 					logger.info(
-						`Found complexity analysis for task ${task.id}: Score ${taskAnalysis.complexityScore}`
+						`Found complexity analysis for ${isSubtask ? 'subtask' : 'task'} ${lookupId}: Score ${taskAnalysis.complexityScore}`
 					);
 					if (taskAnalysis.reasoning) {
 						complexityReasoningContext = `\nComplexity Analysis Reasoning: ${taskAnalysis.reasoning}`;
 					}
 				} else {
 					logger.info(
-						`No complexity analysis found for task ${task.id} in report.`
+						`No complexity analysis found for ${isSubtask ? 'subtask' : 'task'} ${lookupId} in report.`
 					);
 				}
 			} else {
@@ -618,16 +652,26 @@ async function expandTask(
 			if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
 		}
 
-		// --- Task Update & File Writing ---
+		// --- Enhanced Task Update & File Writing for Subtasks ---
 		// Ensure task.subtasks is an array before appending
 		if (!Array.isArray(task.subtasks)) {
 			task.subtasks = [];
 		}
 		// Append the newly generated and validated subtasks
 		task.subtasks.push(...generatedSubtasks);
-		// --- End Change: Append instead of replace ---
 
-		data.tasks[taskIndex] = task; // Assign the modified task back
+		// Save the updated task back to the data structure
+		if (isSubtask) {
+			// For subtasks, the task object is already a reference to the nested subtask
+			// The changes are already applied, just need to save the main task
+			// No additional assignment needed since we modified the reference
+			logger.info(`Updated subtask ${taskId} with ${generatedSubtasks.length} new nested subtasks`);
+		} else {
+			// For main tasks, assign back to the tasks array
+			data.tasks[taskIndex] = task;
+			logger.info(`Updated main task ${taskId} with ${generatedSubtasks.length} new subtasks`);
+		}
+
 		writeJSON(tasksPath, data);
 		await generateTaskFiles(tasksPath, path.dirname(tasksPath));
 

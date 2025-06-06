@@ -19,9 +19,9 @@ import { findTasksPath } from '../core/utils/path-utils.js';
 export function registerExpandTaskTool(server) {
 	server.addTool({
 		name: 'expand_task',
-		description: 'Expand a task into subtasks for detailed implementation',
+		description: 'Expand a task or subtask into nested subtasks for detailed implementation. Supports both main tasks (e.g., "1") and subtasks (e.g., "1.1", "2.3")',
 		parameters: z.object({
-			id: z.string().describe('ID of task to expand'),
+			id: z.string().describe('ID of task or subtask to expand (e.g., "1" for main task, "1.1" for subtask)'),
 			num: z.string().optional().describe('Number of subtasks to generate'),
 			research: z
 				.boolean()
