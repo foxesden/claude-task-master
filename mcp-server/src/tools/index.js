@@ -29,6 +29,8 @@ import { registerRemoveTaskTool } from './remove-task.js';
 import { registerInitializeProjectTool } from './initialize-project.js';
 import { registerModelsTool } from './models.js';
 import { registerMoveTaskTool } from './move-task.js';
+import { vscodeIntegrationTools } from './vscode-integration.js';
+import { augmentIntegrationTools } from './augment-integration.js';
 
 /**
  * Register all Task Master tools with the MCP server
@@ -74,6 +76,16 @@ export function registerTaskMasterTools(server) {
 		registerRemoveDependencyTool(server);
 		registerValidateDependenciesTool(server);
 		registerFixDependenciesTool(server);
+
+		// Group 7: VSCode Integration
+		vscodeIntegrationTools.forEach(tool => {
+			server.addTool(tool);
+		});
+
+		// Group 8: Augment Integration
+		augmentIntegrationTools.forEach(tool => {
+			server.addTool(tool);
+		});
 	} catch (error) {
 		logger.error(`Error registering Task Master tools: ${error.message}`);
 		throw error;

@@ -3,15 +3,22 @@ import path from 'path';
 import { log, readJSON, writeJSON } from '../utils.js';
 import { isTaskDependentOn } from '../task-manager.js';
 import generateTaskFiles from './generate-task-files.js';
+import {
+    parseSubtaskId,
+    generateSubtaskId,
+    addNestedSubtask,
+    findNestedSubtask,
+    migrateLegacySubtasks
+} from './nested-subtask-utils.js';
 
 /**
- * Add a subtask to a parent task
+ * Add a subtask to a parent task (supports nested subtasks)
  * @param {string} tasksPath - Path to the tasks.json file
- * @param {number|string} parentId - ID of the parent task
+ * @param {number|string} parentId - ID of the parent task or hierarchical subtask ID (e.g., "1.2.3")
  * @param {number|string|null} existingTaskId - ID of an existing task to convert to subtask (optional)
  * @param {Object} newSubtaskData - Data for creating a new subtask (used if existingTaskId is null)
  * @param {boolean} generateFiles - Whether to regenerate task files after adding the subtask
- * @returns {Object} The newly created or converted subtask
+ * @returns {Object} The newly created or converted subtask with full hierarchical ID
  */
 async function addSubtask(
 	tasksPath,
@@ -21,7 +28,7 @@ async function addSubtask(
 	generateFiles = true
 ) {
 	try {
-		log('info', `Adding subtask to parent task ${parentId}...`);
+		log('info', `Adding subtask to parent ${parentId}...`);
 
 		// Read the existing tasks
 		const data = readJSON(tasksPath);
@@ -29,18 +36,45 @@ async function addSubtask(
 			throw new Error(`Invalid or missing tasks file at ${tasksPath}`);
 		}
 
-		// Convert parent ID to number
-		const parentIdNum = parseInt(parentId, 10);
+		// Determine if parentId is a task ID or hierarchical subtask ID
+		let parentTask, targetPath, isNestedSubtask = false;
 
-		// Find the parent task
-		const parentTask = data.tasks.find((t) => t.id === parentIdNum);
-		if (!parentTask) {
-			throw new Error(`Parent task with ID ${parentIdNum} not found`);
-		}
+		if (typeof parentId === 'string' && parentId.includes('.')) {
+			// Hierarchical subtask ID (e.g., "1.2.3")
+			isNestedSubtask = true;
+			const parsed = parseSubtaskId(parentId);
+			parentTask = data.tasks.find(task => task.id === parsed.parentId);
 
-		// Initialize subtasks array if it doesn't exist
-		if (!parentTask.subtasks) {
-			parentTask.subtasks = [];
+			if (!parentTask) {
+				throw new Error(`Parent task with ID ${parsed.parentId} not found`);
+			}
+
+			// Migrate legacy subtasks if needed
+			migrateLegacySubtasks(parentTask);
+
+			// Verify the target subtask exists
+			const targetSubtask = findNestedSubtask(parentTask, parsed.path);
+			if (!targetSubtask) {
+				throw new Error(`Target subtask ${parentId} not found`);
+			}
+
+			targetPath = [...parsed.path, 0]; // Will be updated with actual new ID
+		} else {
+			// Regular task ID
+			const parentIdNum = parseInt(parentId, 10);
+			if (isNaN(parentIdNum)) {
+				throw new Error(`Invalid parent ID: ${parentId}`);
+			}
+
+			parentTask = data.tasks.find(task => task.id === parentIdNum);
+			if (!parentTask) {
+				throw new Error(`Parent task with ID ${parentIdNum} not found`);
+			}
+
+			// Migrate legacy subtasks if needed
+			migrateLegacySubtasks(parentTask);
+
+			targetPath = [0]; // Will be updated with actual new ID
 		}
 
 		let newSubtask;
@@ -67,67 +101,45 @@ async function addSubtask(
 			}
 
 			// Check for circular dependency
-			if (existingTaskIdNum === parentIdNum) {
+			const rootParentId = isNestedSubtask ?
+				parseSubtaskId(parentId).parentId :
+				parseInt(parentId, 10);
+
+			if (existingTaskIdNum === rootParentId) {
 				throw new Error(`Cannot make a task a subtask of itself`);
 			}
 
 			// Check if parent task is a subtask of the task we're converting
-			// This would create a circular dependency
 			if (isTaskDependentOn(data.tasks, parentTask, existingTaskIdNum)) {
 				throw new Error(
-					`Cannot create circular dependency: task ${parentIdNum} is already a subtask or dependent of task ${existingTaskIdNum}`
+					`Cannot create circular dependency: task ${rootParentId} is already a subtask or dependent of task ${existingTaskIdNum}`
 				);
 			}
 
-			// Find the highest subtask ID to determine the next ID
-			const highestSubtaskId =
-				parentTask.subtasks.length > 0
-					? Math.max(...parentTask.subtasks.map((st) => st.id))
-					: 0;
-			const newSubtaskId = highestSubtaskId + 1;
-
-			// Clone the existing task to be converted to a subtask
-			newSubtask = {
-				...existingTask,
-				id: newSubtaskId,
-				parentTaskId: parentIdNum
+			// Use nested subtask utilities to add the converted task
+			const convertedTaskData = {
+				title: existingTask.title,
+				description: existingTask.description || '',
+				details: existingTask.details || '',
+				status: existingTask.status || 'pending',
+				dependencies: existingTask.dependencies || []
 			};
 
-			// Add to parent's subtasks
-			parentTask.subtasks.push(newSubtask);
+			const result = addNestedSubtask(parentTask, targetPath, convertedTaskData);
+			newSubtask = result.subtask;
 
 			// Remove the task from the main tasks array
 			data.tasks.splice(existingTaskIndex, 1);
 
-			log(
-				'info',
-				`Converted task ${existingTaskIdNum} to subtask ${parentIdNum}.${newSubtaskId}`
-			);
+			log('info', `Converted task ${existingTaskIdNum} to subtask ${result.fullId}`);
 		}
 		// Case 2: Create a new subtask
 		else if (newSubtaskData) {
-			// Find the highest subtask ID to determine the next ID
-			const highestSubtaskId =
-				parentTask.subtasks.length > 0
-					? Math.max(...parentTask.subtasks.map((st) => st.id))
-					: 0;
-			const newSubtaskId = highestSubtaskId + 1;
+			// Use nested subtask utilities to add the new subtask
+			const result = addNestedSubtask(parentTask, targetPath, newSubtaskData);
+			newSubtask = result.subtask;
 
-			// Create the new subtask object
-			newSubtask = {
-				id: newSubtaskId,
-				title: newSubtaskData.title,
-				description: newSubtaskData.description || '',
-				details: newSubtaskData.details || '',
-				status: newSubtaskData.status || 'pending',
-				dependencies: newSubtaskData.dependencies || [],
-				parentTaskId: parentIdNum
-			};
-
-			// Add to parent's subtasks
-			parentTask.subtasks.push(newSubtask);
-
-			log('info', `Created new subtask ${parentIdNum}.${newSubtaskId}`);
+			log('info', `Created new subtask ${result.fullId}`);
 		} else {
 			throw new Error(
 				'Either existingTaskId or newSubtaskData must be provided'
@@ -143,7 +155,15 @@ async function addSubtask(
 			await generateTaskFiles(tasksPath, path.dirname(tasksPath));
 		}
 
-		return newSubtask;
+		// Return the new subtask with additional metadata for nested subtasks
+		return {
+			...newSubtask,
+			fullId: isNestedSubtask ?
+				generateSubtaskId(parentTask.id, [...targetPath.slice(0, -1), newSubtask.id]) :
+				`${parentTask.id}.${newSubtask.id}`,
+			isNested: isNestedSubtask,
+			depth: targetPath.length
+		};
 	} catch (error) {
 		log('error', `Error adding subtask: ${error.message}`);
 		throw error;

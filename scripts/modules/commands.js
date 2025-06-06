@@ -35,6 +35,9 @@ import {
 	moveTask,
 	migrateProject
 } from './task-manager.js';
+import MigrationManager from './task-manager/migration-utils.js';
+import VSCodeIntegration from './vscode-integration.js';
+import AugmentIntegration from './augment-integration.js';
 
 import {
 	addDependency,
@@ -2753,6 +2756,190 @@ Examples:
 				await migrateProject(options);
 			} catch (error) {
 				console.error(chalk.red('Error during migration:'), error.message);
+				process.exit(1);
+			}
+		});
+
+	// Enhanced migration command for new features
+	programInstance
+		.command('migrate-enhanced')
+		.description('Migrate project to support nested subtasks and VSCode integration')
+		.option('--check', 'Check what migrations are needed without running them')
+		.option('--backup', 'Create backup before migration (default: true)', true)
+		.option('--migrations <types>', 'Specific migrations to run (comma-separated): nested-subtasks,version-metadata,vscode-integration')
+		.option('--restore <path>', 'Restore from a specific backup path')
+		.action(async (options) => {
+			try {
+				const projectRoot = findProjectRoot();
+				const migrationManager = new MigrationManager(projectRoot);
+
+				if (options.restore) {
+					await migrationManager.restoreFromBackup(options.restore);
+					console.log(chalk.green('✓ Restore completed successfully'));
+					return;
+				}
+
+				if (options.check) {
+					const status = await migrationManager.getStatus();
+					console.log(chalk.blue.bold('Migration Status:'));
+					console.log(`Current Version: ${status.currentVersion}`);
+					console.log(`Schema Version: ${status.schemaVersion}`);
+					console.log(`Migration Needed: ${status.migrationNeeded ? chalk.red('Yes') : chalk.green('No')}`);
+
+					if (status.availableMigrations.length > 0) {
+						console.log(`Available Migrations: ${status.availableMigrations.join(', ')}`);
+					}
+
+					console.log(`Features: ${status.features.join(', ')}`);
+					console.log(`Nested Subtasks Support: ${status.nestedSubtasksSupport ? chalk.green('Yes') : chalk.red('No')}`);
+
+					if (status.lastMigration) {
+						console.log(`Last Migration: ${status.lastMigration}`);
+					}
+					return;
+				}
+
+				const migrations = options.migrations ? options.migrations.split(',') : null;
+				const result = await migrationManager.runMigrations(migrations);
+
+				if (result.success) {
+					console.log(chalk.green('✓ Migration completed successfully'));
+					if (result.successfulMigrations.length > 0) {
+						console.log(`Successful migrations: ${result.successfulMigrations.join(', ')}`);
+					}
+				} else {
+					console.log(chalk.yellow('⚠ Migration completed with some failures'));
+					if (result.failedMigrations.length > 0) {
+						console.log(`Failed migrations: ${result.failedMigrations.join(', ')}`);
+					}
+					console.log(`Backup available at: ${result.backupPath}`);
+				}
+			} catch (error) {
+				console.error(chalk.red('Error during enhanced migration:'), error.message);
+				process.exit(1);
+			}
+		});
+
+	// VSCode integration command
+	programInstance
+		.command('vscode')
+		.description('Setup VSCode integration for TaskMaster')
+		.option('--init', 'Initialize VSCode integration')
+		.option('--status', 'Check VSCode integration status')
+		.option('--update-settings <settings>', 'Update VSCode settings (JSON string)')
+		.option('--augment', 'Setup Augment Code integration')
+		.action(async (options) => {
+			try {
+				const projectRoot = findProjectRoot();
+				const integration = new VSCodeIntegration(projectRoot);
+
+				if (options.status) {
+					const status = integration.getStatus();
+					console.log(chalk.blue.bold('VSCode Integration Status:'));
+					console.log(`Initialized: ${status.initialized ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`VSCode Directory: ${status.vscodeDir ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`Settings Configured: ${status.settingsConfigured ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`Tasks Configured: ${status.tasksConfigured ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`Launch Configured: ${status.launchConfigured ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`Extensions Configured: ${status.extensionsConfigured ? chalk.green('Yes') : chalk.red('No')}`);
+					return;
+				}
+
+				if (options.init) {
+					const success = await integration.initialize();
+					if (success) {
+						console.log(chalk.green('✓ VSCode integration initialized successfully'));
+					} else {
+						console.log(chalk.red('✗ Failed to initialize VSCode integration'));
+						process.exit(1);
+					}
+					return;
+				}
+
+				if (options.updateSettings) {
+					try {
+						const settings = JSON.parse(options.updateSettings);
+						await integration.updateSettings(settings);
+						console.log(chalk.green('✓ VSCode settings updated successfully'));
+					} catch (error) {
+						console.error(chalk.red('Error parsing settings JSON:'), error.message);
+						process.exit(1);
+					}
+					return;
+				}
+
+				if (options.augment) {
+					await integration.setupAugmentConfiguration();
+					console.log(chalk.green('✓ Augment Code integration configured'));
+					return;
+				}
+
+				// Default action - show help
+				console.log(chalk.yellow('Please specify an action. Use --help for available options.'));
+			} catch (error) {
+				console.error(chalk.red('Error with VSCode integration:'), error.message);
+				process.exit(1);
+			}
+		});
+
+	// Augment Code integration command
+	programInstance
+		.command('augment')
+		.description('Setup Augment Code integration for TaskMaster')
+		.option('--init', 'Initialize Augment Code integration')
+		.option('--status', 'Check Augment integration status')
+		.option('--instructions', 'Show setup instructions')
+		.action(async (options) => {
+			try {
+				// Use current directory if no TaskMaster project found
+				let projectRoot;
+				try {
+					projectRoot = findProjectRoot();
+				} catch (error) {
+					projectRoot = process.cwd();
+					console.log(chalk.yellow('⚠ No TaskMaster project found. Using current directory.'));
+				}
+				const integration = new AugmentIntegration(projectRoot);
+
+				if (options.status) {
+					const status = integration.getStatus();
+					console.log(chalk.blue.bold('Augment Code Integration Status:'));
+					console.log(`Initialized: ${status.initialized ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`Augment Directory: ${status.augmentDir ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`MCP Configuration: ${status.mcpConfig ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`Context Configuration: ${status.contextConfig ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`VSCode Settings: ${status.vscodeSettings ? chalk.green('Yes') : chalk.red('No')}`);
+					console.log(`Workspace Config: ${status.workspaceConfig ? chalk.green('Yes') : chalk.red('No')}`);
+					return;
+				}
+
+				if (options.instructions) {
+					console.log(chalk.blue.bold('Augment Code Setup Instructions:'));
+					console.log(integration.generateSetupInstructions());
+					return;
+				}
+
+				if (options.init) {
+					const success = await integration.initialize();
+					if (success) {
+						console.log(chalk.green('✓ Augment Code integration initialized successfully'));
+						console.log(chalk.blue('\nNext steps:'));
+						console.log('1. Install Augment Code extension in VSCode');
+						console.log('2. Add your API keys to environment variables');
+						console.log('3. Restart VSCode');
+						console.log('4. Test with: "Initialize a TaskMaster project"');
+						console.log('\nFor detailed instructions, run: task-master augment --instructions');
+					} else {
+						console.log(chalk.red('✗ Failed to initialize Augment Code integration'));
+						process.exit(1);
+					}
+					return;
+				}
+
+				// Default action - show help
+				console.log(chalk.yellow('Please specify an action. Use --help for available options.'));
+			} catch (error) {
+				console.error(chalk.red('Error with Augment Code integration:'), error.message);
 				process.exit(1);
 			}
 		});

@@ -1,0 +1,274 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://taskmaster.ai/schemas/tasks-schema.json",
+  "title": "TaskMaster Tasks Schema",
+  "description": "Schema for TaskMaster tasks.json file with nested subtask support",
+  "type": "object",
+  "required": ["tasks"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the project and tasks file",
+      "properties": {
+        "projectName": {
+          "type": "string",
+          "description": "Name of the project"
+        },
+        "projectVersion": {
+          "type": "string",
+          "description": "Version of the project"
+        },
+        "version": {
+          "type": "string",
+          "description": "TaskMaster version used to create this file"
+        },
+        "schemaVersion": {
+          "type": "string",
+          "description": "Schema version for this tasks file"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the project was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the tasks file was last updated"
+        },
+        "lastMigration": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the last migration was performed"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of enabled features"
+        },
+        "nestedSubtasksSupport": {
+          "type": "boolean",
+          "description": "Whether nested subtasks are supported"
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Array of tasks",
+      "items": {
+        "$ref": "#/definitions/task"
+      }
+    }
+  },
+  "definitions": {
+    "task": {
+      "type": "object",
+      "required": ["id", "title", "description", "status"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Unique task identifier"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Task title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in-progress", "done", "deferred", "cancelled", "review"],
+          "description": "Current status of the task"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "default": "medium",
+          "description": "Task priority"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "Array of task IDs that this task depends on"
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed implementation instructions"
+        },
+        "testStrategy": {
+          "type": "string",
+          "description": "Testing strategy for the task"
+        },
+        "subtasks": {
+          "type": "array",
+          "description": "Array of subtasks (supports unlimited nesting)",
+          "items": {
+            "$ref": "#/definitions/subtask"
+          }
+        },
+        "previousStatus": {
+          "type": "string",
+          "description": "Previous status before current one"
+        },
+        "assignee": {
+          "type": "string",
+          "description": "Person assigned to this task"
+        },
+        "estimatedHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated hours to complete"
+        },
+        "actualHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Actual hours spent"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags for categorizing tasks"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Due date for the task"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the task was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the task was last updated"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the task was completed"
+        }
+      }
+    },
+    "subtask": {
+      "type": "object",
+      "required": ["id", "title", "status"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Subtask identifier (unique within parent)"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Subtask title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Subtask description"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in-progress", "done", "deferred", "cancelled", "review"],
+          "description": "Current status of the subtask"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Task ID dependency"
+              },
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d+)*$",
+                "description": "Hierarchical subtask ID (e.g., '1.2.3')"
+              }
+            ]
+          },
+          "description": "Array of task or subtask IDs that this subtask depends on"
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed implementation instructions"
+        },
+        "testStrategy": {
+          "type": "string",
+          "description": "Testing strategy for the subtask"
+        },
+        "acceptanceCriteria": {
+          "type": "string",
+          "description": "Acceptance criteria for the subtask"
+        },
+        "subtasks": {
+          "type": "array",
+          "description": "Nested subtasks (unlimited depth)",
+          "items": {
+            "$ref": "#/definitions/subtask"
+          }
+        },
+        "parentTaskId": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "ID of the parent task (for backward compatibility)"
+        },
+        "estimatedHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated hours to complete"
+        },
+        "actualHours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Actual hours spent"
+        },
+        "assignee": {
+          "type": "string",
+          "description": "Person assigned to this subtask"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags for categorizing subtasks"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Due date for the subtask"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the subtask was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the subtask was last updated"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the subtask was completed"
+        }
+      }
+    }
+  }
+}

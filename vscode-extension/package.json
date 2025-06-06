@@ -1,0 +1,190 @@
+{
+	"name": "taskmaster-vscode",
+	"displayName": "TaskMaster VSCode Integration",
+	"description": "VSCode extension for TaskMaster AI task management system with Augment Code integration",
+	"version": "0.1.0",
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"categories": [
+		"Other",
+		"Extension Packs"
+	],
+	"keywords": [
+		"taskmaster",
+		"task management",
+		"ai",
+		"augment",
+		"claude",
+		"mcp"
+	],
+	"activationEvents": [
+		"workspaceContains:.taskmaster",
+		"onCommand:taskmaster.initialize",
+		"onView:taskmasterExplorer"
+	],
+	"main": "./src/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "taskmaster.initialize",
+				"title": "Initialize TaskMaster",
+				"category": "TaskMaster"
+			},
+			{
+				"command": "taskmaster.refreshTasks",
+				"title": "Refresh Tasks",
+				"category": "TaskMaster",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "taskmaster.addTask",
+				"title": "Add Task",
+				"category": "TaskMaster",
+				"icon": "$(add)"
+			},
+			{
+				"command": "taskmaster.addSubtask",
+				"title": "Add Subtask",
+				"category": "TaskMaster",
+				"icon": "$(add)"
+			},
+			{
+				"command": "taskmaster.expandTask",
+				"title": "Expand Task",
+				"category": "TaskMaster",
+				"icon": "$(expand-all)"
+			},
+			{
+				"command": "taskmaster.markDone",
+				"title": "Mark as Done",
+				"category": "TaskMaster",
+				"icon": "$(check)"
+			},
+			{
+				"command": "taskmaster.openTask",
+				"title": "Open Task",
+				"category": "TaskMaster",
+				"icon": "$(go-to-file)"
+			},
+			{
+				"command": "taskmaster.nextTask",
+				"title": "Find Next Task",
+				"category": "TaskMaster",
+				"icon": "$(arrow-right)"
+			},
+			{
+				"command": "taskmaster.generateFiles",
+				"title": "Generate Task Files",
+				"category": "TaskMaster",
+				"icon": "$(file-text)"
+			}
+		],
+		"views": {
+			"explorer": [
+				{
+					"id": "taskmasterExplorer",
+					"name": "TaskMaster",
+					"when": "taskmaster.enabled"
+				}
+			]
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "taskmaster",
+					"title": "TaskMaster",
+					"icon": "$(checklist)"
+				}
+			]
+		},
+		"configuration": {
+			"title": "TaskMaster",
+			"properties": {
+				"taskmaster.autoRefresh": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically refresh tasks when files change"
+				},
+				"taskmaster.showSubtasks": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show subtasks in the task explorer"
+				},
+				"taskmaster.defaultPriority": {
+					"type": "string",
+					"enum": ["high", "medium", "low"],
+					"default": "medium",
+					"description": "Default priority for new tasks"
+				},
+				"taskmaster.enableAugmentIntegration": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable integration with Augment Code extension"
+				},
+				"taskmaster.mcpServerPath": {
+					"type": "string",
+					"default": "./mcp-server/server.js",
+					"description": "Path to the TaskMaster MCP server"
+				}
+			}
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "taskmaster.refreshTasks",
+					"when": "view == taskmasterExplorer",
+					"group": "navigation"
+				},
+				{
+					"command": "taskmaster.addTask",
+					"when": "view == taskmasterExplorer",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "taskmaster.addSubtask",
+					"when": "view == taskmasterExplorer && viewItem == task",
+					"group": "inline"
+				},
+				{
+					"command": "taskmaster.expandTask",
+					"when": "view == taskmasterExplorer && viewItem == task",
+					"group": "inline"
+				},
+				{
+					"command": "taskmaster.markDone",
+					"when": "view == taskmasterExplorer && viewItem == task",
+					"group": "inline"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "taskmaster.refreshTasks",
+					"when": "taskmaster.enabled"
+				},
+				{
+					"command": "taskmaster.addTask",
+					"when": "taskmaster.enabled"
+				},
+				{
+					"command": "taskmaster.nextTask",
+					"when": "taskmaster.enabled"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "node ./build.js",
+		"watch": "node ./build.js --watch"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.74.0",
+		"@types/node": "^18.0.0"
+	},
+	"dependencies": {
+		"axios": "^1.6.0"
+	}
+}

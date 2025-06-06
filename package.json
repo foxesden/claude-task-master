@@ -1,7 +1,7 @@
 {
 	"name": "task-master-ai",
-	"version": "0.16.1",
-	"description": "A task management system for ambitious AI-driven development that doesn't overwhelm and confuse Cursor.",
+	"version": "0.17.0",
+	"description": "AI-powered task management system with VSCode integration, Augment Code support, and unlimited nested subtasks for ambitious development projects.",
 	"main": "index.js",
 	"type": "module",
 	"bin": {
@@ -22,7 +22,9 @@
 		"inspector": "npx @modelcontextprotocol/inspector node mcp-server/server.js",
 		"mcp-server": "node mcp-server/server.js",
 		"format-check": "biome format .",
-		"format": "biome format . --write"
+		"format": "biome format . --write",
+		"publish-interactive": "node scripts/publish.js",
+		"prepublishOnly": "npm run test && npm run format-check"
 	},
 	"keywords": [
 		"claude",
@@ -34,7 +36,14 @@
 		"anthropic",
 		"llm",
 		"mcp",
-		"context"
+		"context",
+		"vscode",
+		"augment",
+		"subtasks",
+		"nested",
+		"project-management",
+		"cli",
+		"automation"
 	],
 	"author": "Eyal Toledano",
 	"license": "MIT WITH Commons-Clause",
@@ -89,10 +98,14 @@
 		"assets/**",
 		".cursor/**",
 		"README-task-master.md",
+		"VSCODE_INTEGRATION.md",
 		"index.js",
 		"bin/**",
 		"mcp-server/**",
-		"src/**"
+		"src/**",
+		"vscode-extension/**",
+		"schemas/**",
+		"tests/**"
 	],
 	"overrides": {
 		"node-fetch": "^2.6.12",

@@ -1,0 +1,21 @@
+{
+	"taskmaster.autoRefresh": true,
+	"taskmaster.showSubtasks": true,
+	"taskmaster.defaultPriority": "medium",
+	"taskmaster.enableAugmentIntegration": true,
+	"taskmaster.mcpServerPath": "./mcp-server/server.js",
+	"taskmaster.tasksPath": ".taskmaster/tasks/tasks.json",
+	"taskmaster.configPath": ".taskmaster/config.json",
+	"files.associations": {
+		"*.taskmaster": "json",
+		"tasks.json": "json"
+	},
+	"json.schemas": [
+		{
+			"fileMatch": ["**/tasks.json"],
+			"url": "./schemas/tasks-schema.json"
+		}
+	],
+	"augment.taskmaster.enabled": true,
+	"augment.taskmaster.contextProvider": true
+}
